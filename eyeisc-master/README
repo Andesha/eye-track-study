@@ -1,0 +1,21 @@
+Toolbox for calculating fixation pattern similarities (eye intersubject
+correlations; eyeISC/eISCs) and eyeISC group differences in eye tracking
+data.
+
+Current implementation includes functions for reading eye tracking data in
+ASCII text files recorded with SMI Eye Track and SR Research EyeLink 1000
+eye trackers. For synchronization with experiments, simple functions for
+reading timing information from Presentation (Neurobehavioral Systems) log files
+are included, but these may have to be edited for your particular experimental
+design.
+
+Template for running the analysis with information on how to run it is located
+in the eISC_runAnalysis.m file.
+
+If you have interest in applying this to your data and need some help, you can
+contact Juha Lahnakoski; juha.lahnakoski@aalto.fi or juha.lahnakoski@gmail.com.
+
+This toolbox is a work in progress and suggestions for improving it are
+welcome.
+
+15.12.2015 Juha Lahnakoski

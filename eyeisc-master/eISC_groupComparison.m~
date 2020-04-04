@@ -1,0 +1,99 @@
+function [p,groupMeans,betweenGroups] = eISC_groupComparison(cMat,groups,paired)
+% [p,groupMeans] = eISC_groupComparison(fixMaps,groups,paired)
+% ------------------------------------------------------------------------
+% Calculates mean similarities within and between groups from the given
+% upper triangle entries of the correlation matrix using the groups given
+% in groups-parameter.
+% Statistical testing is currently done with t-test which may be
+% substituted by another test at a later time.
+%
+% Inputs:
+% cMat:     Correlation matrix upper triangle entries from
+%           eISC_spatialSimilarity.m
+% groups:   Vector for a group id for each subject
+% paired:   If this is set to 1 we use a paired test assuming the samples
+%           in the groups are dependent and in the correct order (i.e.
+%           same subjects in the same order)
+%
+% Outputs:
+% p:                Probability that the groups are drawn from a sample of
+%                   equal means. Note that these are uncorrected values and
+%                   correction is done separately.
+% groupMeans:       Mean correlation within each group
+% betweenGroups:    Mean correlation between groups as a correlation matrix
+%                   in the order of ascending group id. It is recommended
+%                   to use simple id scheme of consecutive integers so it
+%                   is clear what the order is in the matrix.
+%
+% Version 0.01
+% 11.4.2012 Juha Lahnakoski
+% juha.lahnakoski@aalto.fi
+
+nGroups=length(unique(groups));
+uGroups=unique(groups);
+if length(uGroups)<=1
+    fprintf('Not enough groups for group comparison... skipping group comparison step!\n');
+    p=[];
+    groupMeans=[];
+    betweenGroups=[];
+    return;
+end;
+
+%-------------------------------------------------------------------------
+%Group mean correlations
+groupMeans=zeros(nGroups,1);
+for k=1:nGroups
+    
+    %This calculates the number of subjects in the upper triangle and
+    %allocates the group matrix
+    gMat{k}=zeros((1+sqrt(1+8*length(cMat)))/2);
+    
+    gMat{k}(find(groups==uGroups(k)),find(groups==uGroups(k)))=1;
+    
+    gVect{k}=find(gMat{k}(find(triu(ones(size(gMat{k})),1))));
+    groupMeans(k)=tanh(mean(atanh(cMat(gVect{k}))));
+    
+end;
+
+%-------------------------------------------------------------------------
+%Group comparisons, 2-group case
+if nGroups==2
+    if nargin>2 && paired==1
+        [~,p]=ttest(tanh(cMat(gVect{1})),atanh(cMat(gVect{2})));
+    else
+        [~,p]=ttest2(tanh(cMat(gVect{1})),atanh(cMat(gVect{2})));
+    end;
+    
+    %Between group means
+    bgMat=zeros((1+sqrt(1+8*length(cMat)))/2);
+    bgMat(find(groups==uGroups(1)),find(groups==uGroups(2)))=1;
+    bgMat(find(groups==uGroups(2)),find(groups==uGroups(1)))=1;
+    bgMat=find(bgMat(find(triu(ones(size(bgMat)),1))));
+    betweenGroups=tanh(mean(atanh(cMat(bgMat))));
+
+%-------------------------------------------------------------------------
+%Group comparisons, multiple groups
+else
+    p=zeros(nGroups);
+    for x=1:nGroups
+        for y=x+1:nGroups
+            if nargin>2 && paired==1
+                [~,p(x,y)]=ttest(tanh(cMat(gVect{x})),atanh(cMat(gVect{y})));
+                p(y,x)=p(x,y);
+            else
+                [~,p(x,y)]=ttest2(tanh(cMat(gVect{x})),atanh(cMat(gVect{y})));
+                p(y,x)=p(x,y);
+            end;
+            
+            %Between group means
+            bgMat=zeros((1+sqrt(1+8*length(cMat)))/2);
+            bgMat(find(groups==uGroups(x)),find(groups==uGroups(y)))=1;
+            bgMat(find(groups==uGroups(y)),find(groups==uGroups(x)))=1;
+            bgMat=find(bgMat(find(triu(ones(size(bgMat)),1))));
+            betweenGroups(x,y)=tanh(nanmean(atanh(cMat(bgMat))));
+            betweenGroups(y,x)=betweenGroups(x,y);
+        end;
+    end;
+end;
+
+end
